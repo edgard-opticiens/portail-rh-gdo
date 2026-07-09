@@ -91,27 +91,9 @@
   .ask-txt p{color:var(--muted);font-size:.95rem;margin:0;line-height:1.5}
   .ask .btn-primary{position:relative;padding:12px 20px;font-size:.92rem;border-radius:12px}
 
-  /* Espace directeur */
-  .dir{margin-top:20px;border:1px solid var(--line);border-radius:22px;background:var(--surface);
-    padding:28px 26px;box-shadow:0 14px 30px -28px rgba(0,0,0,.32)}
-  .dir .lockrow{display:flex;align-items:flex-start;gap:16px}
-  .lockico{width:46px;height:46px;border-radius:50%;background:var(--accent-soft);display:grid;
-    place-items:center;color:var(--accent);flex:none}
-  .lockico svg{width:23px;height:23px;stroke:currentColor;stroke-width:1.8;fill:none}
-  .dir h3{font-family:"Fraunces";font-size:1.3rem;font-weight:600;margin:0 0 4px;font-variation-settings:"opsz" 60}
-  .dir .note{color:var(--muted);font-size:.92rem;margin:0;line-height:1.5}
-  .dir-field{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
-  .dir-field input{flex:1;min-width:180px;font-family:"Inter";font-size:16px;padding:11px 14px;
-    border:1.5px solid var(--line);border-radius:11px;background:#fff;color:var(--ink)}
-  .dir-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
-  .err{color:#B23B3B;font-size:.85rem;margin:10px 0 0}
-  .dir-ok{display:flex;align-items:center;gap:10px;margin-bottom:18px;font-size:.95rem;font-weight:600;color:var(--ink)}
-  .badge{font-size:.78rem;font-weight:600;background:var(--accent-soft);color:var(--accent);padding:4px 11px;border-radius:999px}
-  .dir-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
-
   footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:.8rem;color:var(--muted);line-height:1.5}
 
-  @media(max-width:760px){.grid{grid-template-columns:1fr}.dir-grid{grid-template-columns:1fr}}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
   @media(max-width:520px){.wrap{padding:36px 18px 52px}.ribbon{padding:28px 24px}.ask{padding:24px 22px}}
   @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
@@ -178,33 +160,6 @@
       <button class="btn btn-primary" type="button" onclick="ouvrirQuestionRH()">Poser ma question ↗</button>
     </section>
 
-    <!-- Espace réservé aux directeurs -->
-    <p class="slabel">Espace directeur</p>
-    <section class="dir">
-      <div id="dirLock">
-        <div class="lockrow">
-          <span class="lockico"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
-          <div>
-            <h3>Accès réservé</h3>
-          </div>
-        </div>
-        <div class="dir-field">
-          <input id="codeInput" type="password" inputmode="text" autocomplete="off"
-                 placeholder="Code directeur du magasin" aria-label="Code directeur">
-          <button class="btn btn-primary" id="codeBtn" type="button">Accéder</button>
-        </div>
-        <p class="err" id="codeErr" hidden></p>
-      </div>
-
-      <div id="dirUnlocked" hidden>
-        <div class="dir-ok">
-          <span class="lockico" style="width:34px;height:34px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px"><path d="M20 6L9 17l-5-5"/></svg></span>
-          Accès directeur — magasin <span class="badge" id="dirMagasin"></span>
-        </div>
-        <div class="dir-grid" id="gridDir"></div>
-      </div>
-    </section>
-
     <footer>Portail interne — Générale d'Optique. Vos données restent dans chaque outil&nbsp;; cette page ne fait que vous y diriger.</footer>
   </div>
 
@@ -223,11 +178,9 @@
           <input type="email" id="qrhEmail" autocomplete="email" inputmode="email" placeholder="prenom.nom@…"></div>
         <div class="qrh-f"><label for="qrhTheme">Thème</label>
           <select id="qrhTheme">
-            <option value="Question générale" selected>Question générale</option>
-            <option value="Congés / absences">Congés / absences</option>
-            <option value="Paie / variables">Paie / variables</option>
-            <option value="Contrat / administratif">Contrat / administratif</option>
-            <option value="Autre">Autre</option>
+            <option value="Congés / Absences" selected>Congés / Absences</option>
+            <option value="Bulletin de salaire">Bulletin de salaire</option>
+            <option value="Administratif">Administratif</option>
           </select></div>
         <div class="qrh-f"><label for="qrhQuestion">Votre question <span>*</span></label>
           <textarea id="qrhQuestion" placeholder="Écrivez votre question ici…"></textarea></div>
@@ -266,6 +219,12 @@ const OUTILS = [
     lien:"https://edgard-opticiens.github.io/soldesCP/"
   },
   {
+    titre:"Entretien annuel",
+    desc:"Formulaire d'entretien annuel à compléter et à signer.",
+    icone:"entretien",
+    lien:"https://edgard-opticiens.github.io/entretien-gdo/"
+  },
+  {
     titre:"Demander des heures supplémentaires",
     desc:"Saisie et envoi d'une demande d'heures supplémentaires.",
     icone:"clock",
@@ -292,32 +251,6 @@ const OUTILS = [
     lien:"https://edgard-opticiens.github.io/acompte-gdo/"
   },
 ];
-
-/* Outils visibles UNIQUEMENT après saisie d'un code directeur valide */
-const OUTILS_DIRECTEUR = [
-  {
-    titre:"Demande d'annonce Acuité",
-    desc:"Transmettre au service RH une demande de publication d'annonce sur Acuité pour un poste à pourvoir.",
-    icone:"acuite",
-    lien:"https://edgard-opticiens.github.io/annonce-acuite/"
-  },
-];
-
-/* CODES DIRECTEUR — un code par magasin GdO.
-   ⚠️ À DÉFINIR : remplace chaque "A_DEFINIR" par le code réel du magasin.
-   Choisis des codes DIFFÉRENTS de ceux des variables de paie et du portail Edgard.
-   Tant qu'un code vaut "A_DEFINIR", il ne déverrouille rien. */
-const CODES_DIRECTEUR = {
-  "Chato":"uuqjua",
-  "Chemillo":"qo6ut6",
-  "Cholo":"5hrwdv",
-  "Dunes":"j7igxx",
-  "Ecume":"kdctla",
-  "Formio":"s4t20v",
-  "Marais":"ljcs5u",
-  "Mudo":"oses5i",
-  "Niorto":"eoro9o",
-};
 /* ===================================================================== */
 
 const ICONS = {
@@ -328,7 +261,6 @@ const ICONS = {
   entretien:'<path d="M21 11.5a8 8 0 0 1-11.5 7.2L4 20l1.3-4.5A8 8 0 1 1 21 11.5z"/><path d="M8.5 11h7M8.5 14h4"/>',
   acompte:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M5.5 12h.01M18.5 12h.01"/>',
   solde:'<path d="M12 3v17M6 20h12M4 7h16"/><path d="M4 7l-2 4.5a2.5 2.5 0 0 0 5 0z"/><path d="M20 7l-2 4.5a2.5 2.5 0 0 0 5 0z"/>',
-  acuite:'<path d="M3 10v4a1 1 0 0 0 1 1h2l1 5h2l-1-5h2l9 4V6l-9 4H6a1 1 0 0 0-1 1z"/><path d="M18 9a3 3 0 0 1 0 6"/>',
 };
 const ARROW='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
 const DOC='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/><path d="M10 13h5M10 17h5"/></svg>';
@@ -356,27 +288,6 @@ function majLogo(){
   img.onerror=()=>{ img.hidden=true; wm.hidden=false; wm.textContent=MARQUE.wordmark; };
   img.src=MARQUE.logo;
 }
-
-function tenterCode(){
-  const val=document.getElementById("codeInput").value.trim();
-  const err=document.getElementById("codeErr");
-  let magasin=null;
-  for(const [m,c] of Object.entries(CODES_DIRECTEUR)){
-    if(c && c!=="A_DEFINIR" && c===val){ magasin=m; break; }
-  }
-  if(magasin){
-    document.getElementById("dirLock").hidden=true;
-    document.getElementById("dirUnlocked").hidden=false;
-    document.getElementById("dirMagasin").textContent=magasin;
-    rendre(OUTILS_DIRECTEUR,"#gridDir");
-  }else{
-    err.textContent="Code incorrect. Vérifiez auprès du service RH.";
-    err.hidden=false;
-  }
-}
-
-document.getElementById("codeBtn").addEventListener("click",tenterCode);
-document.getElementById("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter") tenterCode(); });
 
 majLogo();
 rendre(OUTILS,"#grid");
