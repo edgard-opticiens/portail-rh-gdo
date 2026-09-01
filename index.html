@@ -111,7 +111,17 @@
 
   footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--line);font-size:.8rem;color:var(--muted);line-height:1.5}
 
-  @media(max-width:760px){.grid{grid-template-columns:1fr}.dir-grid{grid-template-columns:1fr}}
+  @media(max-width:760px){
+    .grid{grid-template-columns:repeat(2,1fr);gap:12px}
+    .dir-grid{grid-template-columns:1fr}
+    .card{padding:18px 14px;gap:10px;border-radius:16px}
+    .ico{width:38px;height:38px}
+    .ico svg{width:19px;height:19px}
+    .card h2{font-size:1.02rem}
+    .card p{font-size:.82rem;line-height:1.45}
+    .actions{gap:6px}
+    .btn{padding:8px 12px;font-size:.78rem}
+  }
   @media(max-width:520px){.wrap{padding:36px 18px 52px}.ribbon{padding:28px 24px}.ask{padding:24px 22px}}
   @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
@@ -406,8 +416,7 @@ function rendre(outils, sel){ const g=document.querySelector(sel); g.innerHTML="
 
 function majLogo(){
   const img=document.getElementById("brandLogo"), wm=document.getElementById("brandWordmark");
-  img.onerror=()=>{ img.hidden=true; wm.hidden=false; wm.textContent=MARQUE.wordmark; };
-  img.src=MARQUE.logo;
+  img.hidden=true; wm.hidden=false; wm.textContent=MARQUE.wordmark;
 }
 
 majLogo();
