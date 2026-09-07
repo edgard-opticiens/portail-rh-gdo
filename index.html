@@ -220,6 +220,10 @@
           <circle cx="50" cy="50" r="22" stroke-width="1.1"/><circle cx="50" cy="50" r="10" stroke-width="1.1"/>
         </svg>
         <p class="kicker">Espace Ressources Humaines</p>
+        <div id="dateWeek" style="position:absolute; top:22px; right:26px; text-align:right; font-family:'Inter',sans-serif; color:var(--accent-ink,#055f2d);">
+          <div id="dateJour" style="font-size:.85rem; font-weight:600; text-transform:capitalize;"></div>
+          <div id="dateSemaine" style="font-size:.72rem; opacity:.75; margin-top:2px;"></div>
+        </div>
         <div class="logo-slot">
           <img id="brandLogo" alt="">
           <div id="brandWordmark" class="wordmark" hidden></div>
@@ -442,6 +446,20 @@ function majLogo(){
   const img=document.getElementById("brandLogo"), wm=document.getElementById("brandWordmark");
   img.hidden=true; wm.hidden=false; wm.textContent=MARQUE.wordmark;
 }
+
+function getISOWeek(d){
+  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  dt.setUTCDate(dt.getUTCDate() + 4 - (dt.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+  return Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+}
+(function(){
+  var now = new Date();
+  var jourEl = document.getElementById('dateJour');
+  var semEl = document.getElementById('dateSemaine');
+  if(jourEl) jourEl.textContent = now.toLocaleDateString('fr-FR', {weekday:'long', day:'numeric', month:'long'});
+  if(semEl) semEl.textContent = 'Semaine ' + getISOWeek(now);
+})();
 
 majLogo();
 rendre(OUTILS,"#grid");
