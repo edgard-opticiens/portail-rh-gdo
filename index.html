@@ -525,18 +525,18 @@ async function envoyerQuestionRH(){
 }
 </script>
 
-<!-- Encart anniversaires : toujours juste avant "Les petits nouveaux" (ou avant le trombinoscope si absent) -->
+
+<!-- Encarts Anniversaires + Petits nouveaux : script unique, ordre garanti, avant le trombinoscope -->
 <script>
   (function () {
-    var URL_JSON = 'https://edgard-opticiens.github.io/portail-rh-edgard/anniversaires.json';
-    var INSERTED = false;
+    var URL_ANNIV = 'https://edgard-opticiens.github.io/portail-rh-edgard/anniversaires.json';
+    var URL_NOUV  = 'https://edgard-opticiens.github.io/portail-rh-edgard/nouveaux-arrivants.json';
 
     function formatPerson(p) {
       var societe = (p.societe || '').toUpperCase();
       var nom = (p.nom || '').toUpperCase();
       return (societe ? societe + '-' : '') + nom + ' ' + p.prenom + ' (' + p.dateAffichage + ')';
     }
-
     function ligneAvatar(p) {
       return (
         '<div style="display:flex; align-items:center; gap:12px;">' +
@@ -545,12 +545,10 @@ async function envoyerQuestionRH(){
         '<\/div>'
       );
     }
-
-    function buildSection(data) {
+    function buildAnniversaires(data) {
       var aujourdhui = data.aujourdhui || [];
       var bientot = data.bientot || [];
       if (aujourdhui.length === 0 && bientot.length === 0) return null;
-
       var section = document.createElement('section');
       section.id = 'section-anniversaires';
       section.setAttribute('style',
@@ -559,82 +557,29 @@ async function envoyerQuestionRH(){
         'border:1.5px solid rgba(10,138,79,.3); padding:26px 30px; ' +
         'box-shadow:0 20px 40px -28px rgba(10,138,79,.35); font-family:Inter,sans-serif;'
       );
-
       var eyebrow = '<p style="font-size:.72rem; font-weight:700; letter-spacing:.24em; text-transform:uppercase; color:#0A8A4F; margin:0 0 6px;">🎉 Anniversaires<\/p>';
       var titre = aujourdhui.length > 0
         ? '<h2 style="font-family:Fraunces,serif; font-size:1.5rem; font-weight:700; letter-spacing:-.01em; margin:0 0 16px; color:#11231A;">Joyeux anniversaire !<\/h2>'
         : '<h2 style="font-family:Fraunces,serif; font-size:1.5rem; font-weight:700; letter-spacing:-.01em; margin:0 0 16px; color:#11231A;">Anniversaires à venir<\/h2>';
-
       var lignes = '<div style="display:flex; flex-direction:column; gap:12px;">' +
-        aujourdhui.map(ligneAvatar).join('') +
-        bientot.map(ligneAvatar).join('') +
-        '<\/div>';
-
+        aujourdhui.map(ligneAvatar).join('') + bientot.map(ligneAvatar).join('') + '<\/div>';
       section.innerHTML = eyebrow + titre + lignes;
       return section;
     }
-
-    function trouverAncre() {
-      return document.getElementById('section-petits-nouveaux') || document.getElementById('section-trombinoscope');
-    }
-
-    function tenterInsertion(data, essaisRestants) {
-      if (INSERTED) return;
-      var anchor = trouverAncre();
-
-      if (!anchor && essaisRestants > 0) {
-        setTimeout(function () { tenterInsertion(data, essaisRestants - 1); }, 400);
-        return;
-      }
-      if (!anchor) return;
-
-      var section = buildSection(data);
-      if (!section) return;
-
-      anchor.parentNode.insertBefore(section, anchor);
-      INSERTED = true;
-    }
-
-    function afficherAnniversaires() {
-      fetch(URL_JSON, { cache: 'no-store' })
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-          tenterInsertion(data, 20);
-        })
-        .catch(function (err) {
-          console.warn('Anniversaires : impossible de charger', err);
-        });
-    }
-
-    if (document.readyState === 'complete') {
-      setTimeout(afficherAnniversaires, 700);
-    } else {
-      window.addEventListener('load', function () { setTimeout(afficherAnniversaires, 700); });
-    }
-  })();
-</script>
-
-<!-- Encart "Les petits nouveaux" : toujours juste avant le trombinoscope -->
-<script>
-  (function () {
-    var URL_JSON = 'https://edgard-opticiens.github.io/portail-rh-edgard/nouveaux-arrivants.json';
-    var INSERTED = false;
 
     function initiales(prenom, nom) {
       var a = (prenom || '').charAt(0);
       var b = (nom || '').charAt(0);
       return (a + b).toUpperCase();
     }
-
     function carteAvatar(p) {
       var img = p.photoUrl
         ? '<img src="' + p.photoUrl + '" alt="' + p.prenom + ' ' + p.nom + '" class="pn-photo" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
-          '<div class="pn-initials" style="display:none;">' + initiales(p.prenom, p.nom) + '</div>'
-        : '<div class="pn-initials">' + initiales(p.prenom, p.nom) + '</div>';
-
+          '<div class="pn-initials" style="display:none;">' + initiales(p.prenom, p.nom) + '<\/div>'
+        : '<div class="pn-initials">' + initiales(p.prenom, p.nom) + '<\/div>';
       return (
         '<div class="pn-card">' +
-          '<div class="pn-photo-wrap">' + img + '</div>' +
+          '<div class="pn-photo-wrap">' + img + '<\/div>' +
           '<div style="font-family:Inter,sans-serif;">' +
             '<div style="font-size:.78rem; font-weight:700; color:#11231A; line-height:1.3;">' + p.prenom + '<\/div>' +
             '<div style="font-size:.72rem; font-weight:600; color:#11231A; line-height:1.3; text-transform:uppercase;">' + p.nom + '<\/div>' +
@@ -643,11 +588,9 @@ async function envoyerQuestionRH(){
         '<\/div>'
       );
     }
-
-    function buildSection(data) {
+    function buildNouveaux(data) {
       var nouveaux = data.nouveaux || [];
       if (nouveaux.length === 0) return null;
-
       var section = document.createElement('section');
       section.id = 'section-petits-nouveaux';
       section.setAttribute('style',
@@ -656,48 +599,39 @@ async function envoyerQuestionRH(){
         'border:1.5px solid rgba(10,138,79,.3); padding:26px 30px; ' +
         'box-shadow:0 20px 40px -28px rgba(10,138,79,.35); font-family:Inter,sans-serif;'
       );
-
-      var eyebrow = '<p style="font-size:.72rem; font-weight:700; letter-spacing:.24em; text-transform:uppercase; color:#0A8A4F; margin:0 0 6px;">Ils viennent d\'arriver</p>';
-      var titre = '<h2 style="font-family:Fraunces,serif; font-size:1.5rem; font-weight:700; letter-spacing:-.01em; margin:0 0 16px; color:#11231A;">Les petits nouveaux</h2>';
-
+      var eyebrow = '<p style="font-size:.72rem; font-weight:700; letter-spacing:.24em; text-transform:uppercase; color:#0A8A4F; margin:0 0 6px;">Ils viennent d\'arriver<\/p>';
+      var titre = '<h2 style="font-family:Fraunces,serif; font-size:1.5rem; font-weight:700; letter-spacing:-.01em; margin:0 0 16px; color:#11231A;">Les petits nouveaux<\/h2>';
       var avatars = '<div style="display:flex; flex-wrap:wrap; gap:18px;">' + nouveaux.map(carteAvatar).join('') + '<\/div>';
-
       section.innerHTML = eyebrow + titre + avatars;
       return section;
     }
 
-    function tenterInsertion(data, essaisRestants) {
-      if (INSERTED) return;
-      var anchor = document.getElementById('section-trombinoscope');
-
-      if (!anchor && essaisRestants > 0) {
-        setTimeout(function () { tenterInsertion(data, essaisRestants - 1); }, 400);
-        return;
-      }
-      if (!anchor) return;
-
-      var section = buildSection(data);
-      if (!section) return;
-
-      anchor.parentNode.insertBefore(section, anchor);
-      INSERTED = true;
+    function inserer(anchor, section) {
+      if (section) anchor.parentNode.insertBefore(section, anchor);
     }
 
-    function afficherNouveaux() {
-      fetch(URL_JSON, { cache: 'no-store' })
-        .then(function (res) { return res.json(); })
-        .then(function (data) {
-          tenterInsertion(data, 20);
-        })
-        .catch(function (err) {
-          console.warn('Les petits nouveaux : impossible de charger', err);
-        });
+    function demarrer(essaisRestants) {
+      var trombi = document.getElementById('section-trombinoscope');
+      if (!trombi) {
+        if (essaisRestants > 0) { setTimeout(function(){ demarrer(essaisRestants - 1); }, 300); }
+        return;
+      }
+      Promise.all([
+        fetch(URL_ANNIV,  { cache: 'no-store' }).then(function(r){ return r.json(); }).catch(function(){ return null; }),
+        fetch(URL_NOUV,   { cache: 'no-store' }).then(function(r){ return r.json(); }).catch(function(){ return null; })
+      ]).then(function (results) {
+        var annivData = results[0];
+        var nouvData  = results[1];
+        // Ordre garanti : Anniversaires, puis Petits nouveaux, toujours juste avant le Trombinoscope
+        if (annivData) inserer(trombi, buildAnniversaires(annivData));
+        if (nouvData)  inserer(trombi, buildNouveaux(nouvData));
+      });
     }
 
     if (document.readyState === 'complete') {
-      setTimeout(afficherNouveaux, 700);
+      demarrer(20);
     } else {
-      window.addEventListener('load', function () { setTimeout(afficherNouveaux, 700); });
+      window.addEventListener('load', function () { demarrer(20); });
     }
   })();
 </script>
