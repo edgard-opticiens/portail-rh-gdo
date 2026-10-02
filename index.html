@@ -638,11 +638,18 @@ async function envoyerQuestionRH(){
       var b = (nom || '').charAt(0);
       return (a + b).toUpperCase();
     }
+    function fmtDateEntree(iso) {
+      if (!iso) return '';
+      var parts = iso.split('-');
+      if (parts.length !== 3) return '';
+      return parts[2] + '/' + parts[1] + '/' + parts[0];
+    }
     function carteAvatar(p) {
       var img = p.photoUrl
         ? '<img src="' + p.photoUrl + '" alt="' + p.prenom + ' ' + p.nom + '" class="pn-photo" onerror="this.style.display=\'none\'; this.nextElementSibling.style.display=\'flex\';">' +
           '<div class="pn-initials" style="display:none;">' + initiales(p.prenom, p.nom) + '<\/div>'
         : '<div class="pn-initials">' + initiales(p.prenom, p.nom) + '<\/div>';
+      var dateTxt = fmtDateEntree(p.dateEntreeIso);
       return (
         '<div class="pn-card">' +
           '<div class="pn-photo-wrap">' + img + '<\/div>' +
@@ -650,6 +657,7 @@ async function envoyerQuestionRH(){
             '<div style="font-size:.78rem; font-weight:700; color:#11231A; line-height:1.3;">' + p.prenom + '<\/div>' +
             '<div style="font-size:.72rem; font-weight:600; color:#11231A; line-height:1.3; text-transform:uppercase;">' + p.nom + '<\/div>' +
             '<div style="font-size:.66rem; font-weight:500; color:#566B60; margin-top:2px; text-transform:uppercase; letter-spacing:.04em;">' + (p.societe || '') + '<\/div>' +
+            (dateTxt ? '<div style="font-size:.62rem; font-weight:500; color:#0A8A4F; margin-top:3px;">Entrée le ' + dateTxt + '<\/div>' : '') +
           '<\/div>' +
         '<\/div>'
       );
