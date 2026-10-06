@@ -294,6 +294,7 @@
         <div class="dir-ok">
           <span class="lockico" style="width:34px;height:34px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width:18px;height:18px"><path d="M20 6L9 17l-5-5"/></svg></span>
           Accès directeur — magasin <span class="badge" id="dirMagasin"></span>
+          <button type="button" onclick="dirLogout()" style="margin-left:auto;background:none;border:1px solid currentColor;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;color:inherit;opacity:.75">Changer de magasin</button>
         </div>
         <div class="dir-grid" id="gridDir"></div>
       </div>
@@ -512,7 +513,103 @@ setInterval(majHorloge, 1000);
 majLogo();
 rendre(OUTILS,"#grid");
 
+/* ===== Statistiques d'usage du portail (anonymes) =====
+   Compte visites, clics sur les outils et connexions à l'espace directeur (magasin seulement).
+   Aucune donnée personnelle. Envoi groupé : 1 requête par visite en général.
+   Pour exclure un appareil (RH) : ouvrir le portail une fois avec ?nostat=1 (?nostat=0 pour réactiver). */
+const STAT_URL = "https://edgard-opticiens.app.n8n.cloud/webhook/portail-stat";
+const STAT_PORTAIL = "GDO";
+const STAT_OFF = (function(){
+  try{
+    if(/[?&]nostat=1/.test(location.search)) localStorage.setItem("edgard_nostat","1");
+    if(/[?&]nostat=0/.test(location.search)) localStorage.removeItem("edgard_nostat");
+    return localStorage.getItem("edgard_nostat")==="1";
+  }catch(e){ return false; }
+})();
+var STAT_Q = [], STAT_TIMER = null, STAT_DIR_SENT = false;
+function statFlush(){
+  if(STAT_TIMER){ clearTimeout(STAT_TIMER); STAT_TIMER=null; }
+  if(STAT_OFF || !STAT_Q.length) return;
+  const body = JSON.stringify({
+    portail: STAT_PORTAIL,
+    appareil: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "mobile" : "ordinateur",
+    events: STAT_Q.splice(0,25)
+  });
+  try{ fetch(STAT_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:body,keepalive:true}).catch(function(){}); }catch(e){}
+}
+function statEvt(e, delai){
+  if(STAT_OFF) return;
+  if(e.type==="dir"){ if(STAT_DIR_SENT) return; STAT_DIR_SENT = true; }
+  STAT_Q.push(e);
+  if(!STAT_TIMER) STAT_TIMER = setTimeout(statFlush, delai || 4000);
+}
+(function(){
+  try{
+    if(!sessionStorage.getItem("edgard_stat_visite")){
+      sessionStorage.setItem("edgard_stat_visite","1");
+      statEvt({type:"visite"}, 6000);
+    }
+  }catch(e){ statEvt({type:"visite"}, 6000); }
+  document.addEventListener("click", function(ev){
+    const a = ev.target.closest && ev.target.closest("a,button");
+    if(!a) return;
+    const carteEl = a.closest(".card");
+    let cible = null;
+    if(carteEl && a.tagName==="A" && carteEl.querySelector("h2")){
+      cible = carteEl.querySelector("h2").textContent.trim();
+      if(a.classList.contains("btn-ghost")) cible += " (procédure)";
+    }else if(a.tagName==="A" && /\/trombinoscope\//.test(a.href||"")){
+      cible = "Trombinoscope";
+    }else if((a.getAttribute("onclick")||"").indexOf("ouvrirQuestionRH")>=0){
+      cible = "Question RH";
+    }
+    if(cible) statEvt({type:"clic",cible:cible});
+  }, true);
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") statFlush(); });
+  window.addEventListener("pagehide", statFlush);
+})();
+
+/* ===== Session directeur partagée =====
+   Tous les outils sont sur edgard-opticiens.github.io : le navigateur partage donc ce stockage entre le portail
+   et les outils. Le code n'est saisi qu'une fois (valable 30 jours d'inactivité) ; il est revérifié à chaque
+   ouverture, donc un code changé par les RH déconnecte automatiquement. */
+var DIR_SESSION_KEY = 'edgard_dir_session_v1';
+var DIR_SESSION_JOURS = 30;
+function dirHash(s){var h1=0xdeadbeef,h2=0x41c6ce57;for(var i=0,c;i<s.length;i++){c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
+  h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
+  return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);}
+function dirSessionSave(soc,pin){
+  try{localStorage.setItem(DIR_SESSION_KEY,JSON.stringify({soc:String(soc).toUpperCase(),h:dirHash(String(soc).toUpperCase()+':'+pin),t:Date.now()}));}catch(e){}
+}
+function dirSessionClear(){try{localStorage.removeItem(DIR_SESSION_KEY);}catch(e){}}
+/* Renvoie le magasin (clé du tableau de codes de cette page) si une session valide existe, sinon null */
+function dirSessionGet(codes){
+  try{
+    var o=JSON.parse(localStorage.getItem(DIR_SESSION_KEY)||'null');
+    if(!o||!o.soc||!o.h)return null;
+    if(Date.now()-o.t>DIR_SESSION_JOURS*864e5){dirSessionClear();return null;}
+    for(var k in codes){
+      if(Object.prototype.hasOwnProperty.call(codes,k)&&k.toUpperCase()===o.soc){
+        if(codes[k]&&dirHash(o.soc+':'+codes[k])===o.h){
+          o.t=Date.now();try{localStorage.setItem(DIR_SESSION_KEY,JSON.stringify(o));}catch(e){}
+          return k;
+        }
+        dirSessionClear();return null; // code changé par les RH : session invalidée
+      }
+    }
+    return null; // magasin d'une autre enseigne (ex. session GdO sur le portail Edgard) : on la conserve
+  }catch(e){return null;}
+}
+function dirLogout(){dirSessionClear();location.reload();}
+
 /* ===== Espace directeur ===== */
+function ouvrirEspaceDirecteur(magasin){
+  statEvt({type:"dir",magasin:magasin});
+  document.getElementById("dirLock").hidden=true;
+  document.getElementById("dirUnlocked").hidden=false;
+  document.getElementById("dirMagasin").textContent=magasin;
+  rendre(OUTILS_DIRECTEUR,"#gridDir");
+}
 function tenterCode(){
   const val=document.getElementById("codeInput").value.trim();
   const err=document.getElementById("codeErr");
@@ -521,15 +618,18 @@ function tenterCode(){
     if(c && c!=="A_DEFINIR" && c===val){ magasin=m; break; }
   }
   if(magasin){
-    document.getElementById("dirLock").hidden=true;
-    document.getElementById("dirUnlocked").hidden=false;
-    document.getElementById("dirMagasin").textContent=magasin;
-    rendre(OUTILS_DIRECTEUR,"#gridDir");
+    dirSessionSave(magasin,val);
+    ouvrirEspaceDirecteur(magasin);
   }else{
     err.textContent="Code incorrect. Vérifiez auprès du service RH.";
     err.hidden=false;
   }
 }
+/* Session déjà ouverte sur cet appareil : on déverrouille directement */
+(function(){
+  const deja=dirSessionGet(CODES_DIRECTEUR);
+  if(deja) ouvrirEspaceDirecteur(deja);
+})();
 document.getElementById("codeBtn").addEventListener("click",tenterCode);
 document.getElementById("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter") tenterCode(); });
 
