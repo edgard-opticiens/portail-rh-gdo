@@ -106,9 +106,9 @@
   .dir h3{font-family:"Fraunces";font-size:1.3rem;font-weight:600;margin:0 0 4px;font-variation-settings:"opsz" 60}
   .dir .note{color:var(--muted);font-size:.92rem;margin:0;line-height:1.5}
   .dir-field{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
-  .dir-field input{flex:1;min-width:180px;font-family:"Inter";font-size:16px;padding:11px 14px;
+  .dir-field input,.dir-field select{flex:1;min-width:180px;font-family:"Inter";font-size:16px;padding:11px 14px;
     border:1.5px solid var(--line);border-radius:11px;background:#fff;color:var(--ink)}
-  .dir-field input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+  .dir-field input:focus,.dir-field select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
   .err{color:#B23B3B;font-size:.85rem;margin:10px 0 0}
   .dir-ok{display:flex;align-items:center;gap:10px;margin-bottom:18px;font-size:.95rem;font-weight:600;color:var(--ink)}
   .badge{font-size:.78rem;font-weight:600;background:var(--accent-soft);color:var(--accent);padding:4px 11px;border-radius:999px}
@@ -283,6 +283,7 @@
           </div>
         </div>
         <div class="dir-field">
+          <select id="codeSoc" aria-label="Votre magasin"><option value="">Votre magasin…</option></select>
           <input id="codeInput" type="password" inputmode="text" autocomplete="off"
                  placeholder="Code directeur du magasin" aria-label="Code directeur">
           <button class="btn btn-primary" id="codeBtn" type="button">Accéder</button>
@@ -437,17 +438,8 @@ const OUTILS_DIRECTEUR = [
 ];
 
 /* CODES DIRECTEUR — un code par magasin GdO (différents des codes Variables de paie). */
-const CODES_DIRECTEUR = {
-  "Chato":"uuqjua",
-  "Chemillo":"qo6ut6",
-  "Cholo":"5hrwdv",
-  "Dunes":"j7igxx",
-  "Ecume":"kdctla",
-  "Formio":"s4t20v",
-  "Marais":"ljcs5u",
-  "Mudo":"oses5i",
-  "Niorto":"eoro9o",
-};
+const MAGASINS = ["Chato", "Chemillo", "Cholo", "Dunes", "Ecume", "Formio", "Marais", "Mudo", "Niorto"];
+/* Les codes ne sont plus dans cette page : ils sont vérifiés par le serveur (n8n). */
 /* ===================================================================== */
 
 const ICONS = {
@@ -569,38 +561,39 @@ function statEvt(e, delai){
   window.addEventListener("pagehide", statFlush);
 })();
 
-/* ===== Session directeur partagée =====
-   Tous les outils sont sur edgard-opticiens.github.io : le navigateur partage donc ce stockage entre le portail
-   et les outils. Le code n'est saisi qu'une fois (valable 30 jours d'inactivité) ; il est revérifié à chaque
-   ouverture, donc un code changé par les RH déconnecte automatiquement. */
+/* ===== Connexion sécurisée =====
+   Le code est vérifié par le serveur (n8n). La page ne garde qu'un jeton de session (30 jours), partagé
+   avec les autres outils migrés (même navigateur, même site). Le serveur ne renvoie que les données du magasin connecté. */
+var N8N_AUTH_LOGIN = 'https://edgard-opticiens.app.n8n.cloud/webhook/auth-login';
+var AUTH_KEY = 'edgard_auth_v2';
+function authGet(){
+  try{
+    var o=JSON.parse(localStorage.getItem(AUTH_KEY)||'null');
+    if(!o||!o.token||!o.magasin)return null;
+    if(Number(o.expire)<=Date.now()){authClear();return null;}
+    return o;
+  }catch(e){return null;}
+}
+function authSave(o){try{localStorage.setItem(AUTH_KEY,JSON.stringify(o));}catch(e){}}
+function authClear(){try{localStorage.removeItem(AUTH_KEY);}catch(e){}}
+function authLogin(role,magasin,code){
+  return fetch(N8N_AUTH_LOGIN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({role:role,magasin:magasin,code:code})})
+    .then(function(r){return r.json().catch(function(){return {ok:false,error:'reponse'};});});
+}
+/* Compatibilité transitoire : les outils pas encore migrés lisent l'ancienne session (empreinte du code, stockée uniquement sur cet appareil) */
 var DIR_SESSION_KEY = 'edgard_dir_session_v1';
-var DIR_SESSION_JOURS = 30;
 function dirHash(s){var h1=0xdeadbeef,h2=0x41c6ce57;for(var i=0,c;i<s.length;i++){c=s.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677);}
   h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);h2=Math.imul(h2^(h2>>>16),2246822507)^Math.imul(h1^(h1>>>13),3266489909);
   return (4294967296*(2097151&h2)+(h1>>>0)).toString(36);}
 function dirSessionSave(soc,pin){
   try{localStorage.setItem(DIR_SESSION_KEY,JSON.stringify({soc:String(soc).toUpperCase(),h:dirHash(String(soc).toUpperCase()+':'+pin),t:Date.now()}));}catch(e){}
 }
-function dirSessionClear(){try{localStorage.removeItem(DIR_SESSION_KEY);}catch(e){}}
-/* Renvoie le magasin (clé du tableau de codes de cette page) si une session valide existe, sinon null */
-function dirSessionGet(codes){
-  try{
-    var o=JSON.parse(localStorage.getItem(DIR_SESSION_KEY)||'null');
-    if(!o||!o.soc||!o.h)return null;
-    if(Date.now()-o.t>DIR_SESSION_JOURS*864e5){dirSessionClear();return null;}
-    for(var k in codes){
-      if(Object.prototype.hasOwnProperty.call(codes,k)&&k.toUpperCase()===o.soc){
-        if(codes[k]&&dirHash(o.soc+':'+codes[k])===o.h){
-          o.t=Date.now();try{localStorage.setItem(DIR_SESSION_KEY,JSON.stringify(o));}catch(e){}
-          return k;
-        }
-        dirSessionClear();return null; // code changé par les RH : session invalidée
-      }
-    }
-    return null; // magasin d'une autre enseigne (ex. session GdO sur le portail Edgard) : on la conserve
-  }catch(e){return null;}
+function dirLogout(){authClear();try{localStorage.removeItem(DIR_SESSION_KEY);}catch(e){} location.reload();}
+function magasinDe(code){
+  var u=String(code||"").toUpperCase();
+  for(var i=0;i<MAGASINS.length;i++){ if(MAGASINS[i].toUpperCase()===u) return MAGASINS[i]; }
+  return null;
 }
-function dirLogout(){dirSessionClear();location.reload();}
 
 /* ===== Espace directeur ===== */
 function ouvrirEspaceDirecteur(magasin){
@@ -610,25 +603,43 @@ function ouvrirEspaceDirecteur(magasin){
   document.getElementById("dirMagasin").textContent=magasin;
   rendre(OUTILS_DIRECTEUR,"#gridDir");
 }
+(function(){
+  var sel=document.getElementById("codeSoc");
+  MAGASINS.slice().sort().forEach(function(m){var o=document.createElement("option");o.value=m;o.textContent=m;sel.appendChild(o);});
+})();
+var GATE_BUSY=false;
 function tenterCode(){
+  if(GATE_BUSY) return;
+  const soc=document.getElementById("codeSoc").value;
   const val=document.getElementById("codeInput").value.trim();
   const err=document.getElementById("codeErr");
-  let magasin=null;
-  for(const [m,c] of Object.entries(CODES_DIRECTEUR)){
-    if(c && c!=="A_DEFINIR" && c===val){ magasin=m; break; }
-  }
-  if(magasin){
-    dirSessionSave(magasin,val);
-    ouvrirEspaceDirecteur(magasin);
-  }else{
-    err.textContent="Code incorrect. Vérifiez auprès du service RH.";
-    err.hidden=false;
-  }
+  const montrer=function(t){err.textContent=t;err.hidden=false;};
+  if(!soc){montrer("Choisissez votre magasin.");return;}
+  if(!val){montrer("Saisissez votre code.");return;}
+  GATE_BUSY=true; montrer("Vérification…");
+  authLogin("DIR",soc,val).then(function(j){
+    GATE_BUSY=false;
+    if(j&&j.ok){
+      authSave({token:j.token,role:j.role,magasin:j.magasin,expire:j.expire});
+      dirSessionSave(soc,val);
+      err.hidden=true;
+      ouvrirEspaceDirecteur(soc);
+    }else if(j&&j.error==="verrouille"){
+      montrer("Trop d'essais. Réessayez dans "+(j.minutes||15)+" min.");
+      document.getElementById("codeInput").value="";
+    }else if(j&&j.error==="incorrect"){
+      montrer("Code incorrect. Vérifiez auprès du service RH.");
+      document.getElementById("codeInput").value="";
+    }else{
+      montrer("Connexion impossible pour le moment — réessayez.");
+    }
+  }).catch(function(){GATE_BUSY=false;montrer("Connexion impossible pour le moment — réessayez.");});
 }
 /* Session déjà ouverte sur cet appareil : on déverrouille directement */
 (function(){
-  const deja=dirSessionGet(CODES_DIRECTEUR);
-  if(deja) ouvrirEspaceDirecteur(deja);
+  const a=authGet();
+  const m=a&&a.role==="DIR"?magasinDe(a.magasin):null;
+  if(m) ouvrirEspaceDirecteur(m);
 })();
 document.getElementById("codeBtn").addEventListener("click",tenterCode);
 document.getElementById("codeInput").addEventListener("keydown",e=>{ if(e.key==="Enter") tenterCode(); });
