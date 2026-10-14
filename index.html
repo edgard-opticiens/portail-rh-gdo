@@ -739,8 +739,8 @@ async function envoyerQuestionRH(){
 <!-- Encarts Anniversaires + Petits nouveaux : script unique, ordre garanti, avant le trombinoscope -->
 <script>
   (function () {
-    var URL_ANNIV = 'https://edgard-opticiens.github.io/portail-rh-edgard/anniversaires.json';
-    var URL_NOUV  = 'https://edgard-opticiens.github.io/portail-rh-edgard/nouveaux-arrivants.json';
+    var URL_ANNIV = 'https://edgard-opticiens.app.n8n.cloud/webhook/anniversaires-lecture';
+    var URL_NOUV  = 'https://edgard-opticiens.app.n8n.cloud/webhook/nouveaux-arrivants-lecture';
 
     function formatPerson(p) {
       var societe = (p.societe || '').toUpperCase();
