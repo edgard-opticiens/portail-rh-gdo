@@ -980,13 +980,13 @@ async function envoyerQuestionRH(){
     // seule la mise en scène est plus intense.
     var ov = document.createElement('div');
     ov.setAttribute('aria-hidden','true');
-    ov.style.cssText = 'position:fixed;inset:0;z-index:999999;overflow:hidden;background:radial-gradient(circle at center,#1a0000 0%,#000 72%);animation:jsFlash .4s steps(1) 1, jsShake .7s cubic-bezier(.36,.07,.19,.97) 1;';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:999999;overflow:hidden;background:radial-gradient(circle at center,#1a0000 0%,#000 72%);animation:jsFlash .4s steps(1) 1, jsShake 1.3s cubic-bezier(.36,.07,.19,.97) 1;';
     document.body.appendChild(ov);
     document.documentElement.style.visibility = 'visible';
 
     var eyesWrap = document.createElement('div');
     eyesWrap.setAttribute('aria-hidden','true');
-    eyesWrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:min(10vw,90px);animation:jsIntroEyes 1s ease-out 1 forwards;';
+    eyesWrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:min(10vw,90px);animation:jsIntroEyes 1.4s ease-out 1 forwards;';
     eyesWrap.innerHTML =
       '<span style="width:min(5vw,46px);height:min(5vw,46px);border-radius:50%;background:radial-gradient(circle,#ff2a2a 0%,#6a0000 70%,transparent 100%);box-shadow:0 0 40px 10px rgba(255,20,20,.8);display:block;"></span>'+
       '<span style="width:min(5vw,46px);height:min(5vw,46px);border-radius:50%;background:radial-gradient(circle,#ff2a2a 0%,#6a0000 70%,transparent 100%);box-shadow:0 0 40px 10px rgba(255,20,20,.8);display:block;"></span>';
@@ -994,7 +994,7 @@ async function envoyerQuestionRH(){
 
     var faceWrap = document.createElement('div');
     faceWrap.setAttribute('aria-hidden','true');
-    faceWrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:jsIntroFace 1s cubic-bezier(.17,1.8,.5,1) 1 forwards;';
+    faceWrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:jsIntroFace 1.4s cubic-bezier(.17,1.8,.5,1) 1 forwards;';
     var face = document.createElement('div');
     face.textContent = '👹';
     face.style.cssText = 'font-size:min(42vw,380px);line-height:1;filter:drop-shadow(-2px 0 0 rgba(255,0,60,.35)) drop-shadow(2px 0 0 rgba(0,230,255,.3)) drop-shadow(0 0 45px rgba(255,20,20,.8)) drop-shadow(0 0 100px rgba(123,47,247,.55));';
@@ -1002,10 +1002,10 @@ async function envoyerQuestionRH(){
     ov.appendChild(faceWrap);
 
     setTimeout(function(){
-      ov.style.transition = 'opacity .3s ease';
+      ov.style.transition = 'opacity .4s ease';
       ov.style.opacity = '0';
-      setTimeout(function(){ ov.remove(); }, 320);
-    }, 800);
+      setTimeout(function(){ ov.remove(); }, 420);
+    }, 1900);
   }
 
   // Décor ambiant discret (masqué sur mobile pour ne pas charger l'écran)
