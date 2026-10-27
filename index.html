@@ -219,6 +219,19 @@
 </style>
 </head>
 <body>
+<script>
+// Masque la page le temps du jump scare d'ouverture (période Halloween uniquement).
+// Filet de sécurité : la page est de toute façon révélée au plus tard après 2,5s,
+// même si le script principal plus bas ne s'exécute pas pour une raison quelconque.
+(function(){
+  function auj(){ var d=new Date(); return String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function dansPeriode(j,debut,fin){ return debut<=fin ? (j>=debut&&j<=fin) : (j>=debut||j<=fin); }
+  if (dansPeriode(auj(), '10-20', '11-02')) {
+    document.documentElement.style.visibility = 'hidden';
+    setTimeout(function(){ document.documentElement.style.visibility = 'visible'; }, 2500);
+  }
+})();
+</script>
   <div class="wrap">
 
     <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
@@ -946,6 +959,53 @@ async function envoyerQuestionRH(){
     document.querySelectorAll('.mascot-wrap .mascot-hero').forEach(function(img){
       img.src = actif.mascotte;
     });
+  }
+
+  // Jump scare à l'ouverture, uniquement pendant la période Halloween.
+  // La page est masquée (voir le petit script juste après <body>) le temps que
+  // cette séquence s'exécute, puis elle est révélée dès que l'overlay est en place.
+  if (actif.id === 'halloween') {
+    var jsStyle = document.createElement('style');
+    jsStyle.textContent =
+      '@keyframes jsFlash{0%{background:#000}14%{background:#4a0d14}28%{background:#000}100%{background:#000}}'+
+      '@keyframes jsShake{0%,100%{transform:translate(0,0)}8%{transform:translate(-9px,5px)}16%{transform:translate(8px,-7px)}24%{transform:translate(-8px,6px)}32%{transform:translate(7px,-5px)}40%{transform:translate(-5px,5px)}48%{transform:translate(5px,-4px)}56%{transform:translate(-4px,3px)}64%{transform:translate(3px,-2px)}72%{transform:translate(-2px,2px)}80%{transform:translate(1px,-1px)}100%{transform:translate(0,0)}}'+
+      '@keyframes jsIntroEyes{0%{opacity:0;transform:scale(.4)}18%{opacity:1;transform:scale(1)}26%{opacity:1;transform:scale(1.05)}33%{opacity:0;transform:scale(1.05)}100%{opacity:0}}'+
+      '@keyframes jsIntroFace{0%{opacity:0;transform:scale(.2) rotate(-6deg)}30%{opacity:0;transform:scale(.2) rotate(-6deg)}38%{opacity:1}60%{transform:scale(1.18) rotate(2deg)}78%{transform:scale(.97) rotate(-1deg)}100%{transform:scale(1.03) rotate(0);opacity:1}}';
+    document.head.appendChild(jsStyle);
+
+    // Tout est créé et lancé d'un bloc, dès l'ouverture (pas de setTimeout imbriqué pour faire
+    // apparaître les éléments un par un) : les yeux puis le visage sont deux animations qui
+    // démarrent toutes les deux immédiatement, chacune avec ses propres paliers internes. C'est le
+    // même principe que la première version (qui s'est révélée fiable même sur une page lourde) ;
+    // seule la mise en scène est plus intense.
+    var ov = document.createElement('div');
+    ov.setAttribute('aria-hidden','true');
+    ov.style.cssText = 'position:fixed;inset:0;z-index:999999;overflow:hidden;background:radial-gradient(circle at center,#1a0000 0%,#000 72%);animation:jsFlash .4s steps(1) 1, jsShake .7s cubic-bezier(.36,.07,.19,.97) 1;';
+    document.body.appendChild(ov);
+    document.documentElement.style.visibility = 'visible';
+
+    var eyesWrap = document.createElement('div');
+    eyesWrap.setAttribute('aria-hidden','true');
+    eyesWrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:min(10vw,90px);animation:jsIntroEyes 1s ease-out 1 forwards;';
+    eyesWrap.innerHTML =
+      '<span style="width:min(5vw,46px);height:min(5vw,46px);border-radius:50%;background:radial-gradient(circle,#ff2a2a 0%,#6a0000 70%,transparent 100%);box-shadow:0 0 40px 10px rgba(255,20,20,.8);display:block;"></span>'+
+      '<span style="width:min(5vw,46px);height:min(5vw,46px);border-radius:50%;background:radial-gradient(circle,#ff2a2a 0%,#6a0000 70%,transparent 100%);box-shadow:0 0 40px 10px rgba(255,20,20,.8);display:block;"></span>';
+    ov.appendChild(eyesWrap);
+
+    var faceWrap = document.createElement('div');
+    faceWrap.setAttribute('aria-hidden','true');
+    faceWrap.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;animation:jsIntroFace 1s cubic-bezier(.17,1.8,.5,1) 1 forwards;';
+    var face = document.createElement('div');
+    face.textContent = '👹';
+    face.style.cssText = 'font-size:min(42vw,380px);line-height:1;filter:drop-shadow(-2px 0 0 rgba(255,0,60,.35)) drop-shadow(2px 0 0 rgba(0,230,255,.3)) drop-shadow(0 0 45px rgba(255,20,20,.8)) drop-shadow(0 0 100px rgba(123,47,247,.55));';
+    faceWrap.appendChild(face);
+    ov.appendChild(faceWrap);
+
+    setTimeout(function(){
+      ov.style.transition = 'opacity .3s ease';
+      ov.style.opacity = '0';
+      setTimeout(function(){ ov.remove(); }, 320);
+    }, 800);
   }
 
   // Décor ambiant discret (masqué sur mobile pour ne pas charger l'écran)
