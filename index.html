@@ -1189,6 +1189,120 @@ async function envoyerQuestionRH(){
     hero.parentNode.insertBefore(b, hero.nextSibling);
   }
 
+  // Mini-animation "transformation" confinee au bandeau d'annonce (jamais en dehors
+  // du cadre bleu, grace a l'overflow:hidden deja present sur la section). Course
+  // naturelle (sans ballon dans les mains), pose du ballon, recul, prise d'elan, tir
+  // entre les poteaux, au-dessus de la barre. Le drapeau en bout de bandeau est
+  // masque le temps de la scene puis remis. Une fois par jour et par visiteur,
+  // desactivee si la personne a demande moins d'animations.
+  if (b && (actif.id === 'tournoi-6-nations' || actif.id === 'championnat-nations')
+      && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    try {
+      var dejaJoueCle = 'transfoRugbyJoueLe4';
+      var ajdEssai = new Date().toISOString().slice(0,10);
+      if (localStorage.getItem(dejaJoueCle) !== ajdEssai) {
+        var heroImgEssai = document.querySelector('.mascot-wrap .mascot-hero');
+        if (heroImgEssai && heroImgEssai.src) {
+          localStorage.setItem(dejaJoueCle, ajdEssai);
+
+          var bRect = b.getBoundingClientRect();
+          var bh = Math.max(44, bRect.height);
+          var bw = Math.max(220, bRect.width);
+          var accentEssai = (actif.couleurs && actif.couleurs['--spark']) || '#C8102E';
+
+          // Drapeau en bout de bandeau (dernier enfant de b) : masque le temps de la
+          // scene pour ne pas se melanger aux poteaux, puis remis tel quel apres.
+          var flagEl = b.lastElementChild;
+          if (flagEl) {
+            flagEl.style.transition = 'opacity .3s ease';
+            flagEl.style.opacity = '0';
+          }
+
+          // Scene dediee, a droite du bandeau, de la hauteur exacte du bandeau : tout
+          // ce qui en sortirait est de toute facon coupe par l'overflow:hidden du parent.
+          var stageW = Math.round(bw * 0.4);
+          var stageH = bh;
+          var charH = Math.round(Math.min(stageH * 0.74, 60));
+          var postsH = Math.round(stageH * 0.86);
+          var postsW = Math.round(postsH * 0.6);
+          var crossbarY = Math.round(postsH * 0.34);
+          var markX = stageW - postsW - Math.round(charH * 0.5) - 6;   // ou le ballon est pose
+          var reculX = Math.max(4, markX - Math.round(charH * 0.9));   // position apres recul
+          var ballEndX = stageW - Math.round(postsW / 2);              // centre, entre les poteaux
+          var ballEndY = Math.round(crossbarY + (postsH - crossbarY) * 0.62); // bien au-dessus de la barre
+          var ballMidX = Math.round((markX + ballEndX) / 2);
+          var ballMidY = Math.round(ballEndY * 0.72);
+
+          var aStyle = document.createElement('style');
+          aStyle.textContent =
+            '@keyframes tfIn{0%{opacity:0;transform:translateX(8px)}100%{opacity:1;transform:translateX(0)}}'+
+            '@keyframes tfOut{0%{opacity:1}100%{opacity:0}}'+
+            '@keyframes tfRunIn{0%{left:-'+charH+'px;transform:translateY(0) rotate(0deg)}'+
+              '12%{transform:translateY(-3px) rotate(-3deg)}24%{transform:translateY(0) rotate(0deg)}'+
+              '36%{transform:translateY(-3px) rotate(-3deg)}48%{transform:translateY(0) rotate(0deg)}'+
+              '100%{left:'+markX+'px;transform:translateY(0) rotate(0deg)}}'+
+            '@keyframes tfBend{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.86)}}'+
+            '@keyframes tfBallDrop{0%{opacity:0;transform:translateY(-6px) scale(.6)}100%{opacity:1;transform:translateY(0) scale(1)}}'+
+            '@keyframes tfBack{0%{left:'+markX+'px}100%{left:'+reculX+'px}}'+
+            '@keyframes tfRunUp{0%{left:'+reculX+'px;transform:rotate(0deg)}70%{transform:rotate(-6deg)}100%{left:'+markX+'px;transform:rotate(-10deg)}}'+
+            '@keyframes tfKickBall{0%{opacity:1;left:'+markX+'px;bottom:0;transform:scale(1) rotate(0deg)}'+
+              '10%{opacity:1}'+
+              '58%{left:'+ballMidX+'px;bottom:'+ballMidY+'px;transform:scale(.92) rotate(200deg)}'+
+              '100%{left:'+ballEndX+'px;bottom:'+ballEndY+'px;transform:scale(.8) rotate(340deg)}}'+
+            '@keyframes tfPostsFlash{0%,100%{filter:none}50%{filter:drop-shadow(0 0 8px '+accentEssai+')}}'+
+            '@keyframes tfSpark{0%{opacity:0;transform:translate(-50%,-50%) scale(.3)}40%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.4)}}';
+          document.head.appendChild(aStyle);
+
+          var stage = document.createElement('div');
+          stage.setAttribute('aria-hidden','true');
+          stage.style.cssText = 'position:absolute;right:2px;top:0;bottom:0;width:'+stageW+'px;overflow:hidden;pointer-events:none;animation:tfIn .4s ease-out 1 forwards, tfOut .4s ease-in 1 5.6s forwards;';
+
+          // Poteaux
+          var posts = document.createElement('div');
+          posts.style.cssText = 'position:absolute;right:0;bottom:0;width:'+postsW+'px;height:'+postsH+'px;animation:tfPostsFlash .5s ease-in-out 1 3.9s;';
+          var uL = document.createElement('div');
+          uL.style.cssText = 'position:absolute;left:0;bottom:0;width:2px;height:100%;background:#F3EFE4;border-radius:2px;';
+          var uR = document.createElement('div');
+          uR.style.cssText = 'position:absolute;right:0;bottom:0;width:2px;height:100%;background:#F3EFE4;border-radius:2px;';
+          var cb = document.createElement('div');
+          cb.style.cssText = 'position:absolute;left:0;bottom:'+crossbarY+'px;width:100%;height:2px;background:#F3EFE4;border-radius:2px;';
+          posts.appendChild(uL); posts.appendChild(uR); posts.appendChild(cb);
+          stage.appendChild(posts);
+
+          // Coureur (meme visuel que la mascotte costumee, sans ballon ajoute)
+          var runner = document.createElement('img');
+          runner.src = heroImgEssai.src;
+          runner.style.cssText = 'position:absolute;bottom:0;height:'+charH+'px;width:auto;'+
+            'filter:drop-shadow(0 3px 4px rgba(0,0,0,.3));'+
+            'animation:tfRunIn 1.1s ease-out 1 forwards, tfBend .3s ease-in-out 1 1.1s, '+
+            'tfBack .5s ease-in 1 1.5s forwards, tfRunUp .5s ease-in 1 2.2s forwards;';
+          stage.appendChild(runner);
+
+          // Ballon pose au sol, puis tire vers les poteaux
+          var ballG = document.createElement('span');
+          ballG.textContent = '🏉';
+          ballG.style.cssText = 'position:absolute;bottom:0;left:'+markX+'px;font-size:'+Math.round(charH*0.22)+'px;'+
+            'opacity:0;animation:tfBallDrop .3s ease-out 1 1.3s forwards, tfKickBall .8s cubic-bezier(.25,.65,.3,1) 1 2.7s forwards;';
+          stage.appendChild(ballG);
+
+          // Petit eclat au moment ou le ballon passe entre les poteaux
+          var spark = document.createElement('span');
+          spark.textContent = '✨';
+          spark.style.cssText = 'position:absolute;left:'+ballEndX+'px;bottom:'+(ballEndY+6)+'px;'+
+            'font-size:'+Math.round(charH*0.3)+'px;opacity:0;animation:tfSpark .6s ease-out 1 3.4s forwards;';
+          stage.appendChild(spark);
+
+          b.appendChild(stage);
+          setTimeout(function(){
+            stage.remove();
+            if (flagEl) { flagEl.style.opacity = '1'; }
+          }, 6200);
+        }
+      }
+    } catch(e) {}
+  }
+
+
   // Mascotte costumée : on remplace entièrement l'image de la mascotte principale
   // (le petit élépahnt flottant en bas à droite) par la version habillée pour l'occasion.
   // Les mascottes "question" (style cartoon) ne sont pas touchées pour ne pas mélanger les styles.
