@@ -1193,17 +1193,13 @@ async function envoyerQuestionRH(){
   // du cadre bleu, grace a l'overflow:hidden deja present sur la section). Course
   // naturelle (sans ballon dans les mains), pose du ballon, recul, prise d'elan, tir
   // entre les poteaux, au-dessus de la barre. Le drapeau en bout de bandeau est
-  // masque le temps de la scene puis remis. Une fois par jour et par visiteur,
+  // masque le temps de la scene puis remis. Jouee a chaque chargement de page,
   // desactivee si la personne a demande moins d'animations.
   if (b && (actif.id === 'tournoi-6-nations' || actif.id === 'championnat-nations')
       && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
     try {
-      var dejaJoueCle = 'transfoRugbyJoueLe4';
-      var ajdEssai = new Date().toISOString().slice(0,10);
-      if (localStorage.getItem(dejaJoueCle) !== ajdEssai) {
-        var heroImgEssai = document.querySelector('.mascot-wrap .mascot-hero');
-        if (heroImgEssai && heroImgEssai.src) {
-          localStorage.setItem(dejaJoueCle, ajdEssai);
+      var heroImgEssai = document.querySelector('.mascot-wrap .mascot-hero');
+      if (heroImgEssai && heroImgEssai.src) {
 
           var bRect = b.getBoundingClientRect();
           var bh = Math.max(44, bRect.height);
@@ -1298,7 +1294,6 @@ async function envoyerQuestionRH(){
             if (flagEl) { flagEl.style.opacity = '1'; }
           }, 6200);
         }
-      }
     } catch(e) {}
   }
 
